@@ -1,15 +1,21 @@
 package com.mengchen.assignment2.rest;
 
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mengchen.assignment2.entity.User;
+import com.mengchen.assignment2.security.SecurityUtils;
 import com.mengchen.assignment2.service.UserService;
+import com.mengchen.assignment2.utils.ResponseFilter;
+import com.mengchen.assignment2.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import javax.validation.Valid;
 import java.util.List;
-import java.util.UUID;
 
+@Validated
 @RestController
 @RequestMapping("/v1")
 public class UserRestController {
@@ -21,46 +27,86 @@ public class UserRestController {
         this.userService = theUserService;
     }
 
-    // expose "/users" to return user list
     @GetMapping("/users")
-    public List<User> getUsers(){
-        return userService.listAllUser();
+    @ResponseBody
+    public ResponseEntity<String> getUsers() throws JsonProcessingException{
+
+        List<User> listUser = userService.listAllUser();
+
+        return ResponseEntity.status(HttpStatus.OK).body(filterPassword(listUser));
     }
 
     // add mapping for GET /users/{email}
 
-    @GetMapping("/users/{theEmail}")
-    public User getUser(@PathVariable String theEmail){
-        User theUser = userService.findByEmail(theEmail);
+    @GetMapping("/user/self")
+    public ResponseEntity<String> getUser( @RequestHeader (name="Authorization") String token) throws JsonProcessingException{
 
-        if(theUser == null){
-            throw new RuntimeException("User email did not exist - " + theEmail);
-        }
+        User user = userService.findByEmail(SecurityUtils.getUserEmailFromToken(token));
 
-        return theUser;
+        String filter = filterPassword(user);
+        return ResponseEntity.status(HttpStatus.OK).body(filter);
     }
 
     @PostMapping("/user")
-    public User addUser(@RequestBody User theUser){
+    @ResponseBody
+    public ResponseEntity<String> addUser(@RequestBody @Valid User theUser) throws JsonProcessingException{
 
-//        theUser.setId(UUID.randomUUID().toString());
-        theUser.setCreatedTime(LocalDateTime.now().toString());
-        theUser.setUpdateTime(LocalDateTime.now().toString());
+//        // check if the email follow the rules
+//
+//        if(!Utils.usernamePatternCorrect(theUser.getEmail())){
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Sry, You must enter right email address to be your username!");
+//        }
+        // check if the email address already exist
+        User user = userService.findByEmail(theUser.getEmail());
 
-        userService.updateUser(theUser);
+        if(user != null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Sry, This Email Address (Username) already exist!");
+        }
 
-        return theUser;
+        userService.createUser(theUser);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(filterPassword(theUser));
     }
 
     @PutMapping("/user/self")
-    public User updateUser(@RequestBody User theUser){
-        String createTime = theUser.getCreatedTime();
-        theUser.setCreatedTime(createTime);
-        theUser.setUpdateTime(LocalDateTime.now().toString());
+    @ResponseBody
+    public ResponseEntity<String> updateUser(@RequestBody @Valid User theUser, @RequestHeader (name="Authorization") String token) throws JsonProcessingException{
+        if(theUser.getId() != null
+                || theUser.getCreatedTime() != null
+                || theUser.getUpdateTime() != null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("You input some field that are not allowed to be modified.");
+        }
 
+        if(!theUser.getEmail().equals(SecurityUtils.getUserEmailFromToken(token))){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Sry You cannot update other's info.");
+        }
+
+        theUser.setId(SecurityUtils.getUserIdFromToken(token));
+
+        if(theUser.getFirstName() == null || theUser.getLastName() == null || theUser.getPassword()==null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Partial PUT is never RESTFUL!");
+        }
         userService.updateUser(theUser);
-        return theUser;
+
+        String filter = filterPassword(theUser);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(filter);
     }
 
+    @DeleteMapping("/user/{email}")
+    public String deleteUser(@PathVariable String email){
+        User theUser = userService.findByEmail(email);
 
+        if(theUser == null){
+            throw new RuntimeException("There is no user under email : " + email);
+        }
+
+        userService.deleteUser(email);
+
+        return "User " + theUser.getLastName() + " has been deleted";
+
+    }
+
+    private String filterPassword(Object result) throws JsonProcessingException{
+        return ResponseFilter.filterOutFieldsFromResp(result, "UserEntity", "password");
+    }
 }

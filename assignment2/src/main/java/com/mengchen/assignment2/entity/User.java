@@ -1,20 +1,27 @@
 package com.mengchen.assignment2.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonFilter;
+import com.mengchen.assignment2.security.SecurityUtils;
+import com.mengchen.assignment2.security.ValidPassword;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
+import org.hibernate.annotations.SelectBeforeUpdate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.validation.annotation.Validated;
 
 import javax.persistence.*;
-
-import java.sql.Time;
+import javax.validation.Valid;
+import javax.validation.constraints.Email;
 import java.time.LocalDateTime;
-import java.util.Date;
 
+@Validated
 @Entity
+@DynamicUpdate
+@SelectBeforeUpdate
 @EntityListeners(AuditingEntityListener.class)
 @Table(name="user")
+@JsonFilter("UserEntity")
 public class User {
 
     @Id
@@ -29,19 +36,19 @@ public class User {
     @Column(name = "last_name")
     private String lastName;
 
-    @Column(name = "email_address")
+    @Column(name = "email_address", unique = true)
+    @Email(message = "Sry, You must enter right email address to be your username!")
+    @Valid
     private String email;
 
-
+    @ValidPassword
     @Column(name = "password")
     private String password;
 
-//    @CreatedDate
-    @Column(name = "account_created", nullable = false)
+    @Column(name = "account_created", updatable = false)
     private String createdTime;
 
-//    @LastModifiedDate
-    @Column(name = "account_updated", nullable = false)
+    @Column(name = "account_updated")
     private String updateTime;
 
     public User(){
@@ -51,19 +58,10 @@ public class User {
     public User( String firstName, String lastName,
                 String email, String password)  {
         super();
-//        this.id = UUID.randomUUID().toString();
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.password = password;
-
-//        SimpleDateFormat sdf = new SimpleDateFormat();
-//        sdf.applyPattern("yyyy-MM-dd HH:mm:ss a");
-//        Date date = new Date();
-//        this.createdTime = sdf.format(date);
-//
-//        this.updateTime = "";
-
     }
 
     public String getId() {
@@ -132,5 +130,16 @@ public class User {
                 ", createdTime='" + createdTime + '\'' +
                 ", updateTime='" + updateTime + '\'' +
                 '}';
+    }
+
+    @PrePersist
+    public void prePersist() {
+        password = SecurityUtils.encode(password);
+        updateTime = LocalDateTime.now().toString();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updateTime = LocalDateTime.now().toString();
     }
 }

@@ -10,7 +10,11 @@ public interface UserService {
 
     public User findByEmail(String theEmail);
 
+    public void createUser(User theUser);
+
     public void updateUser(User theUser);
 
     public void deleteUser(String theEmail);
+
+    public String login(String username, String password);
 }

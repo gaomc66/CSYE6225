@@ -1,14 +1,17 @@
 package com.mengchen.assignment2.service;
 
 import com.mengchen.assignment2.dao.UserDAO;
-import com.mengchen.assignment2.dao.UserDAOImpl;
 import com.mengchen.assignment2.entity.User;
+import com.mengchen.assignment2.security.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
+@Validated
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -33,7 +36,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public void createUser(User theUser) {
+        theUser.setCreatedTime(LocalDateTime.now().toString());
+        userDAO.createUser(theUser);
+    }
+
+    @Override
+    @Transactional
     public void updateUser(User theUser) {
+        //TODO find user
+        //then put what ever changed into the exist user obj
+        //userDao.updateUser(existUser)
         userDAO.updateUser(theUser);
     }
 
@@ -41,5 +54,14 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteUser(String theUsername) {
         userDAO.deleteUser(theUsername);
+    }
+
+    @Override
+    public String login(String username, String password) {
+        User customer = userDAO.findByEmail(username);
+        if(customer != null && SecurityUtils.match(password, customer.getPassword())){
+            return SecurityUtils.getAuthToken(customer);
+        }
+        return null;
     }
 }

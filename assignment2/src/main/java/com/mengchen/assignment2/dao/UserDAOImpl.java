@@ -45,9 +45,17 @@ public class UserDAOImpl implements UserDAO {
                 currentSession.createQuery("from User where email=:theEmail", User.class);
 
         theQuery.setParameter("theEmail", theEmail);
-        User user = (User) theQuery.getResultList().get(0);
+        User userResult = (User) theQuery.uniqueResultOptional().orElse(null);
 
-        return user;
+        return userResult;
+    }
+
+    @Override
+    public void createUser(User theUser) {
+
+        Session currentSession = entityManager.unwrap(Session.class);
+
+        currentSession.save(theUser);
     }
 
     @Override
@@ -55,10 +63,8 @@ public class UserDAOImpl implements UserDAO {
 
         Session currentSession = entityManager.unwrap(Session.class);
 
-        currentSession.saveOrUpdate(theUser);
+        currentSession.update(theUser);
     }
-
-
 
     @Override
     public void deleteUser(String theEmail) {
@@ -70,4 +76,5 @@ public class UserDAOImpl implements UserDAO {
         theQuery.setParameter("theEmail", theEmail);
         theQuery.executeUpdate();
     }
+
 }

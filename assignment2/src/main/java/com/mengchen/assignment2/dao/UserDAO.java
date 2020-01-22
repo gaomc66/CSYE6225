@@ -10,8 +10,9 @@ public interface UserDAO {
 
     public User findByEmail(String theEmail);
 
+    public void createUser(User theUser);
+
     public void updateUser(User theUser);
 
     public void deleteUser(String theEmail);
-
 }
