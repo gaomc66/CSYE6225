@@ -1,6 +1,7 @@
 package com.mengchen.assignment2.dao;
 
 import com.mengchen.assignment2.entity.User;
+import com.mengchen.assignment2.security.SecurityUtils;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Repository
 public class UserDAOImpl implements UserDAO {
+
 
     private EntityManager entityManager;
 
@@ -62,6 +64,8 @@ public class UserDAOImpl implements UserDAO {
     public void updateUser(User theUser) {
 
         Session currentSession = entityManager.unwrap(Session.class);
+//
+        theUser.setPassword(SecurityUtils.encode(theUser.getPassword()));
 
         currentSession.update(theUser);
     }
@@ -72,7 +76,7 @@ public class UserDAOImpl implements UserDAO {
         Session currentSession = entityManager.unwrap(Session.class);
 
         Query theQuery =
-                currentSession.createQuery("delete from User where email=:theEmail", User.class);
+                currentSession.createQuery("delete from User where email=:theEmail");
         theQuery.setParameter("theEmail", theEmail);
         theQuery.executeUpdate();
     }

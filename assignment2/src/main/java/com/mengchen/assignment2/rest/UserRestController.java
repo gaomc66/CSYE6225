@@ -39,6 +39,7 @@ public class UserRestController {
     // add mapping for GET /users/{email}
 
     @GetMapping("/user/self")
+    @ResponseBody
     public ResponseEntity<String> getUser( @RequestHeader (name="Authorization") String token) throws JsonProcessingException{
 
         User user = userService.findByEmail(SecurityUtils.getUserEmailFromToken(token));
@@ -79,6 +80,10 @@ public class UserRestController {
 
         if(!theUser.getEmail().equals(SecurityUtils.getUserEmailFromToken(token))){
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Sry You cannot update other's info.");
+        }
+
+        if(!Utils.passwordPatternCorrect(theUser.getPassword())){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Your password is not follow the rule.");
         }
 
         theUser.setId(SecurityUtils.getUserIdFromToken(token));
