@@ -5,7 +5,6 @@ import com.mengchen.assignment2.entity.User;
 import com.mengchen.assignment2.security.SecurityUtils;
 import com.mengchen.assignment2.service.UserService;
 import com.mengchen.assignment2.utils.ResponseFilter;
-import com.mengchen.assignment2.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -57,6 +56,10 @@ public class UserRestController {
 //        if(!Utils.usernamePatternCorrect(theUser.getEmail())){
 //            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Sry, You must enter right email address to be your username!");
 //        }
+
+        if(theUser.getFirstName() == null || theUser.getEmail() == null ||theUser.getLastName() == null || theUser.getPassword()==null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Luck of Attribute!");
+        }
         // check if the email address already exist
         User user = userService.findByEmail(theUser.getEmail());
 
@@ -82,7 +85,7 @@ public class UserRestController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Sry You cannot update other's info.");
         }
 
-        if(!Utils.passwordPatternCorrect(theUser.getPassword())){
+        if(!SecurityUtils.passwordPatternCorrect(theUser.getPassword())){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Your password is not follow the rule.");
         }
 

@@ -1,9 +1,11 @@
 package com.mengchen.assignment2.dao;
 
 import com.mengchen.assignment2.entity.User;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public interface UserDAO {
 
     public List<User> listAllUser();

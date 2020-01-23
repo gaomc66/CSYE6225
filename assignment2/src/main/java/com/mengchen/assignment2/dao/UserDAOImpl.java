@@ -28,8 +28,6 @@ public class UserDAOImpl implements UserDAO {
         // get the current hibernate session
         Session currentSession = entityManager.unwrap(Session.class);
 
-        // create a Query
-        // this point needs to add support framework (Hibernate)
         Query<User> theQuery =
                 currentSession.createQuery("from User", User.class);
 
@@ -64,7 +62,7 @@ public class UserDAOImpl implements UserDAO {
     public void updateUser(User theUser) {
 
         Session currentSession = entityManager.unwrap(Session.class);
-//
+
         theUser.setPassword(SecurityUtils.encode(theUser.getPassword()));
 
         currentSession.update(theUser);

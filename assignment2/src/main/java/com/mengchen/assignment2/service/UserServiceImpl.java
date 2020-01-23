@@ -44,9 +44,6 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void updateUser(User theUser) {
-        //TODO find user
-        //then put what ever changed into the exist user obj
-        //userDao.updateUser(existUser)
         userDAO.updateUser(theUser);
     }
 
